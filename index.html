@@ -242,7 +242,7 @@ var WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
 
 /* ===== 規則層（純函式） ===== */
 
-// 兩筆預約是否重疊：同會議室、同日、時間區間相交；首尾相接不算
+// 兩筆預約是否衝突：同會議室、同日、時間區間有交集（首尾相接不算衝突）
 function overlaps(a, b){
   return a.roomId === b.roomId && a.date === b.date &&
     toMin(a.start) < toMin(b.end) && toMin(b.start) < toMin(a.end);
