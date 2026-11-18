@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>衝突檢查測試</title>
+<style>
+  body { font-family: system-ui, "Microsoft JhengHei", sans-serif; margin: 24px; color: #222; }
+  #summary { font-size: 20px; font-weight: bold; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+  #summary.pass { background: #e6f4ea; color: #1e7e34; }
+  #summary.fail { background: #fdecea; color: #b3261e; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
+  th { background: #f3f3f3; }
+  tr.fail td { background: #fff5f5; }
+  td.c { text-align: center; }
+</style>
+</head>
+<body>
+<h1>衝突檢查測試（app.js）</h1>
+<div id="summary">執行中…</div>
+<table>
+  <thead><tr><th>測試名稱</th><th>預期值</th><th>實際值</th><th>結果</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<script src="app.js"></script>
+<script>
+  // 建立預約物件的輔助函式
+  function bk(id, roomId, date, start, end){
+    return { id: id, roomId: roomId, date: date, start: start, end: end };
+  }
+
+  var base = bk('a', 'R1', '2026-11-18', '10:00', '12:00');
+
+  // 每筆測試：name、expected、fn（回傳實際值）
+  var tests = [
+    // 一般情況
+    { name: '完全相同時段 → 衝突', expected: true,
+      fn: function(){ return overlaps(base, bk('b', 'R1', '2026-11-18', '10:00', '12:00')); } },
+    { name: '完全錯開時段 → 不衝突', expected: false,
+      fn: function(){ return overlaps(base, bk('b', 'R1', '2026-11-18', '14:00', '15:00')); } },
+
+    // 邊界情況
+    { name: '部分重疊（新預約在前段：09–11）→ 衝突', expected: true,
+      fn: function(){ return overlaps(bk('b', 'R1', '2026-11-18', '09:00', '11:00'), base); } },
+    { name: '部分重疊（新預約在後段：11–13）→ 衝突', expected: true,
+      fn: function(){ return overlaps(bk('b', 'R1', '2026-11-18', '11:00', '13:00'), base); } },
+    { name: '完全包含（新預約 10:30–11:30 在既有內）→ 衝突', expected: true,
+      fn: function(){ return overlaps(bk('b', 'R1', '2026-11-18', '10:30', '11:30'), base); } },
+    { name: '完全包含（新預約 09–13 包住既有）→ 衝突', expected: true,
+      fn: function(){ return overlaps(bk('b', 'R1', '2026-11-18', '09:00', '13:00'), base); } },
+    { name: '緊鄰時段（10–12 與 12–14）→ 允許', expected: false,
+      fn: function(){ return overlaps(base, bk('b', 'R1', '2026-11-18', '12:00', '14:00')); } },
+    { name: '緊鄰時段（反向：08–10 與 10–12）→ 允許', expected: false,
+      fn: function(){ return overlaps(bk('b', 'R1', '2026-11-18', '08:00', '10:00'), base); } },
+    { name: '不同會議室同時段 → 允許', expected: false,
+      fn: function(){ return overlaps(base, bk('b', 'R2', '2026-11-18', '10:00', '12:00')); } },
+    { name: '同會議室不同日期同時段 → 允許', expected: false,
+      fn: function(){ return overlaps(base, bk('b', 'R1', '2026-11-19', '10:00', '12:00')); } },
+
+    // findConflict
+    { name: 'findConflict：有重疊時回傳該筆預約的 id', expected: 'a',
+      fn: function(){
+        var r = findConflict(bk('n', 'R1', '2026-11-18', '11:00', '13:00'), [base]);
+        return r ? r.id : null;
+      } },
+    { name: 'findConflict：無重疊時回傳 null', expected: null,
+      fn: function(){ return findConflict(bk('n', 'R1', '2026-11-18', '12:00', '14:00'), [base]); } },
+    { name: 'findConflict：編輯自己時以 excludeId 排除 → null', expected: null,
+      fn: function(){ return findConflict(bk('a', 'R1', '2026-11-18', '10:00', '12:00'), [base], 'a'); } }
+  ];
+
+  var tbody = document.getElementById('rows');
+  var passed = 0;
+
+  // 顯示用字串（區分 null 與字串）
+  function show(v){ return typeof v === 'string' ? '"' + v + '"' : String(v); }
+
+  tests.forEach(function(t){
+    var actual, err = null;
+    try { actual = t.fn(); } catch (e) { err = e; actual = '例外：' + e.message; }
+    var ok = !err && actual === t.expected;
+    if (ok) passed++;
+    var tr = document.createElement('tr');
+    if (!ok) tr.className = 'fail';
+    [t.name, show(t.expected), err ? actual : show(actual), ok ? '✅' : '❌'].forEach(function(txt, i){
+      var td = document.createElement('td');
+      if (i === 3) td.className = 'c';
+      td.textContent = txt;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  var sum = document.getElementById('summary');
+  sum.textContent = '通過 ' + passed + ' 項／共 ' + tests.length + ' 項';
+  sum.className = passed === tests.length ? 'pass' : 'fail';
+</script>
+</body>
+</html>
