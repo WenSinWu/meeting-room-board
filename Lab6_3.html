@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/><title>Lab 6-3｜被 Claude 訪談</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/><style>
+/* UUU Lab 3.0 樣式：深色任務橫幅＋進度條；步驟卡片；設定四格；過關方塊＋過關章 */
+:root{
+  --bg:#eef1f5; --card:#ffffff; --ink:#151c2b; --muted:#5f6b7d; --line:#d9dee6;
+  --band:#ffffff; --band-ink:#151c2b; --band-muted:#5f6b7d; --band-track:#d9dee6;
+  --accent:#f26b1d; --accent-soft:#fff0e6; --done:#1f9d55; --done-soft:#e5f6ec;
+  --warn:#b45309; --warn-soft:#fff7e6; --info:#2563eb; --info-soft:#eaf1ff; --code-bg:#f3f5f8;
+  --f-body:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono","Cascadia Code",Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--f-body);-webkit-font-smoothing:antialiased}
+.inner{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--info)}
+b,strong{font-weight:700}
+/* 任務橫幅 */
+.band{background:var(--band);color:var(--band-ink);border-bottom:1px solid var(--line)}
+.band .inner{padding-block:22px 20px}
+.kicker{font-size:13px;color:var(--band-muted);letter-spacing:.04em}
+.title{display:flex;align-items:center;gap:14px;margin:6px 0 14px}
+.lv{flex-shrink:0;display:grid;place-items:center;align-content:center;min-width:58px;height:58px;padding:0 8px;border-radius:12px;background:var(--accent);color:#fff;font:700 13px/1.1 var(--f-mono);text-align:center}
+.lv b{display:block;font-size:24px}
+h1{margin:0;font-size:28px;line-height:1.3;font-weight:900;text-wrap:balance}
+.track{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+.track a,.track span{display:block;text-decoration:none;color:var(--band-muted);font-size:12.5px;padding-top:8px;border-top:4px solid var(--band-track);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track .past{border-top-color:var(--done);color:var(--band-ink)}
+.track .on{border-top-color:var(--accent);color:var(--band-ink);font-weight:700}
+.track a:hover{color:var(--accent);border-top-color:var(--accent)}
+.track a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main.inner{padding-block:24px 70px}
+.goalbar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.label{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:700;flex-shrink:0}
+.goalbar .goal{font-size:18px;font-weight:900}
+/* 設定四格 */
+.setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;margin:0 0 26px}
+.setup>div{padding:12px 14px;min-width:0;box-shadow:1px 0 0 var(--line),0 1px 0 var(--line)}
+.setup dt{font-size:12px;color:var(--muted);letter-spacing:.05em}
+.setup dd{margin:2px 0 0;font-size:14.5px;line-height:1.6;overflow-wrap:anywhere}
+.setup dd small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.setup-title{font-size:13px;color:var(--muted);font-weight:700;margin:0 0 6px}
+h2{font-size:19px;margin:30px 0 12px;font-weight:900;text-wrap:balance}
+h2.part{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.part-note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:22px 0 12px}
+h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:1.4em}
+li{margin:3px 0}
+/* 步驟卡片 */
+.step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;min-width:0}
+.step .no{font:700 12.5px var(--f-mono);color:var(--accent);letter-spacing:.04em}
+.step>h3{margin:0 0 4px;font-size:17px}
+.step>*:last-child{margin-bottom:0}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--code-bg);border:1px solid var(--line);padding:1px 6px;border-radius:4px;overflow-wrap:anywhere}
+.prompt{position:relative;margin:10px 0;background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.prompt pre{margin:0;white-space:pre-wrap;font:14px/1.75 var(--f-mono);padding-right:66px;overflow-x:auto}
+.prompt pre code{background:none;border:0;padding:0;font-size:inherit}
+.copy{position:absolute;top:10px;right:10px;font:700 12.5px var(--f-body);background:var(--accent);color:#fff;border:0;border-radius:8px;padding:5px 12px;cursor:pointer}
+.copy:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.tbl{overflow-x:auto;margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:14.5px;background:var(--card)}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:700}
+blockquote{margin:10px 0;padding:10px 14px;background:var(--info-soft);border-radius:10px}
+blockquote p{margin:4px 0}
+.note{font-size:14.5px;color:var(--muted);background:var(--code-bg);border-radius:8px;padding:8px 12px}
+/* 提示框 */
+.box{border-radius:12px;padding:14px 18px;margin:16px 0;border:1px solid var(--line);background:var(--card)}
+.box>.tag{display:inline-block;font:700 12px var(--f-body);letter-spacing:.06em;padding:1px 9px;border-radius:6px;margin-bottom:4px;background:var(--code-bg);color:var(--muted)}
+.box>h3{margin:2px 0 4px;font-size:16px}
+.box.product{border-color:var(--done);background:var(--done-soft)}
+.box.product>.tag{background:var(--done);color:#fff}
+.box.optional{border-style:dashed}
+.box.warn,.alert{border-color:var(--warn);background:var(--warn-soft)}
+.box.warn>.tag{background:var(--warn);color:#fff}
+.box.info>.tag{background:var(--info);color:#fff}
+.alert{border:1px solid var(--warn);border-radius:12px;padding:12px 16px;margin:12px 0}
+.alert h3{margin:0 0 4px;font-size:15.5px;color:var(--warn)}
+.art{border:1px dashed var(--line);border-radius:10px;padding:14px 18px;margin:12px 0;background:var(--code-bg)}
+.art h3{margin:0 0 6px;font-size:15.5px}
+/* 過關條件 */
+.checks{margin-top:26px}
+.checks .head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.checks .head h2{margin:0}
+.checks .lead{font-size:14px;color:var(--muted);margin:0 0 10px}
+.meter{display:flex;align-items:center;gap:8px;font:700 13px var(--f-mono);color:var(--muted)}
+.meter i{display:block;width:110px;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter i::after{content:"";display:block;height:100%;width:var(--p,0%);background:var(--done);transition:width .25s}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.tile{position:relative;display:flex;gap:10px;align-items:flex-start;cursor:pointer;background:var(--card);border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.6;transition:border-color .15s,background .15s;min-width:0}
+.tile.sub{border-style:dashed}
+.tile input{position:absolute;opacity:0;pointer-events:none}
+.tile .tick{flex-shrink:0;display:grid;place-items:center;width:22px;height:22px;margin-top:1px;border-radius:7px;border:2px solid var(--line);font-size:13px;color:transparent}
+.tile .t{min-width:0}
+.tile:has(input:checked){border-color:var(--done);background:var(--done-soft)}
+.tile:has(input:checked) .tick{background:var(--done);border-color:var(--done);color:#fff}
+.tile:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.stamp{display:none;margin-top:12px;padding:10px 16px;border-radius:12px;background:var(--done-soft);color:var(--done);font-weight:900;text-align:center;letter-spacing:.08em}
+.stamp.show{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.94);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.stamp.show{animation:none}.meter i::after{transition:none}}
+.clue{margin-top:22px;display:flex;gap:14px;align-items:flex-start;padding:14px 18px;border-radius:12px;border:2px dashed var(--accent);background:var(--accent-soft)}
+.clue .lock{flex-shrink:0;font:700 12px var(--f-body);color:var(--accent);border:2px solid var(--accent);border-radius:8px;padding:1px 8px;margin-top:2px}
+.clue .txt p{margin:0 0 4px}
+.clue .txt p:last-child{margin:0}
+.nav{display:grid;grid-template-columns:1fr 1.4fr;gap:12px;margin-top:30px}
+.nav a{display:block;padding:12px 16px;border-radius:12px;text-decoration:none;font-size:14.5px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.nav a small{display:block;font-size:12px;color:var(--muted)}
+.nav a.nx{text-align:right;grid-column:2}
+.nav a.nx.ready{background:var(--accent);border-color:var(--accent);color:#fff}
+.nav a.nx.ready small{color:#ffffffcc}
+/* 多關合一頁（第五章） */
+.section{padding-top:8px;margin-top:34px;border-top:2px solid var(--line);scroll-margin-top:12px}
+.section:first-of-type{border-top:0;margin-top:0}
+.sec-head{display:flex;align-items:center;gap:12px;margin:14px 0 4px}
+.sec-head .lv{min-width:46px;height:46px;border-radius:10px;font-size:11px}
+.sec-head .lv b{font-size:19px}
+.sec-head h2{margin:0}
+.sec-kicker{font-size:13px;color:var(--muted);margin:0 0 10px}
+/* 環境安裝 */
+.cred{background:var(--code-bg);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:14.5px}
+.val{font-family:var(--f-mono)}
+.sub-step{padding:6px 0 6px 12px;border-left:3px solid var(--line);margin:6px 0;font-size:15px}
+.ok{color:var(--done);font-weight:700}
+.sec-sub{color:var(--muted)}
+@media (max-width:640px){
+  h1{font-size:23px}
+  .track span:not(.on),.track a:not(.on){font-size:0}
+  .grid{grid-template-columns:1fr}
+  .nav{grid-template-columns:1fr}.nav a.nx{grid-column:1}
+}
+@media print{body{background:#fff}.band{background:#fff}.copy,.nav,.meter,.stamp{display:none}}
+</style></head><body><header class="band"><div class="inner"><div class="kicker">第六章 Lab · 派它第一個正式案子：從一句需求到 MVP ・ 對應投影片：第 5 張（讓 Claude 幫你訪談需求）</div><div class="title"><div class="lv">Lab<b>3</b></div><h1>被 Claude 訪談</h1></div><nav class="track"><a class="past" href="Lab6_1.html">1 一句話</a><a class="past" href="Lab6_2.html">2 找碴</a><a aria-current="page" class="on" href="Lab6_3.html">3 被訪談</a><a href="Lab6_4.html">4 開工儀式</a><a href="Lab6_5.html">5 盯計畫</a><a href="Lab6_6.html">6 放行</a><a href="Lab6_7.html">7 點交</a><a href="Lab6_8.html">8 存證</a></nav></div></header><main class="inner"><div class="goalbar"><span class="label">目標</span><span class="goal">你不寫 spec，你只回答問題</span></div>
+<h2>怎麼做</h2>
+<div class="step"><div class="no">STEP 1</div><h3>清空對話</h3>
+<p>回到 Claude Code，輸入：</p>
+<div class="prompt"><pre><code>/clear</code></pre></div>
+<p>（Lab 1 的腦補計畫還留在對話裡，白板擦乾淨再開始。）</p>
+</div><div class="step"><div class="no">STEP 2</div><h3>先猜：如果是你，你會怎麼開口？　⏱️ 60 秒</h3>
+<p><b>先不要往下看。</b>下一步會給你一段標準訪談 Prompt——但在看到它之前，先在紙上寫下<b>你自己的版本</b>（2～3 行就好）：</p>
+<blockquote><p>你想要 Claude「用問問題的方式」幫你把需求釐清、最後整理成一份 spec。<br/>
+這句交辦，你會怎麼寫？</p></blockquote>
+<p>不用寫得漂亮，寫你真實會打的那句話。寫完再往下。</p>
+</div><div class="step"><div class="no">STEP 3</div><h3>貼上訪談 Prompt</h3>
+<div class="prompt"><pre><code>我想做一個會議室預約看板。請先不要寫任何程式。
+你扮演資深系統分析師，透過提問幫我釐清需求：
+- 一次只問一個問題
+- 問完必要的問題後（5～8 題內），把結論整理成 spec.md
+- spec.md 要包含：目標、使用者、功能清單（MVP）、非目標、技術限制、驗收標準</code></pre></div>
+</div><div class="step"><div class="no">STEP 4</div><h3>對答案：圈出你漏掉的那幾句</h3>
+<p>拿你剛寫的 2～3 行，跟標準 Prompt 逐句比對。多數人會漏掉其中一、兩句——在紙上<b>把你沒寫到的圈起來</b>：</p>
+<div class="tbl"><table>
+<tr><th>標準 Prompt 裡的這句</th><th>少了它會發生什麼</th></tr>
+<tr><td>「請先不要寫任何程式」</td><td>它可能跳過訪談直接動工——Lab 1 的腦補重演</td></tr>
+<tr><td>「一次只問一個問題」</td><td>一口氣丟 8 題，你會漏答、亂答</td></tr>
+<tr><td>「把結論整理成 spec.md」＋六區塊清單</td><td>訪談完只得到一段聊天紀錄，沒有可交付的檔案</td></tr>
+</table></div>
+<p>圈出來的那幾句，就是你目前交辦習慣的盲點——<b>這一章結束前，它們要變成你的反射動作。</b></p>
+</div><div class="step"><div class="no">STEP 5</div><h3>照這個方向回答</h3>
+<p>為了讓全班的 spec 收斂到同一個 MVP（第九、十章要共用），請照這個方向回答：</p>
+<div class="tbl"><table>
+<tr><th>被問到</th><th>建議回答</th></tr>
+<tr><td>要登入嗎？</td><td>不要，內部使用</td></tr>
+<tr><td>幾間會議室？</td><td>3 間就好</td></tr>
+<tr><td>時段怎麼切？</td><td>選起始與結束時間，都是整點（例如 10:00 到 12:00）</td></tr>
+<tr><td>同時段重複預約？</td><td>不行，要擋下並提示</td></tr>
+<tr><td>資料要保存嗎？</td><td>要，重新整理後還在（localStorage）</td></tr>
+<tr><td>要後端嗎？</td><td>不要，單一 HTML 檔</td></tr>
+</table></div>
+<p>・若它問到清單以外的問題，用「不要、越簡單越好」的方向回答<br/>
+・若超過 10 題還在問，直接說：「請整理目前結論成 spec.md」</p>
+</div><div class="step"><div class="no">STEP 6</div><h3>把「不要」收進非目標</h3>
+<p>訪談收尾時，跟它說：</p>
+<div class="prompt"><pre><code>把我回答「不要」的項目都整理進非目標，然後把結論寫入 spec.md</code></pre></div>
+</div><div class="step"><div class="no">STEP 7</div><h3>確認 spec.md 已存檔</h3>
+<p>另開一個 PowerShell 視窗（不用退出 Claude）：</p>
+<div class="prompt"><pre><code>cd meeting-room-board
+type spec.md</code></pre></div>
+<p>（若顯示找不到資料夾：用檔案總管開到 <code>meeting-room-board</code>，在網址列輸入 <code>powershell</code> 按 Enter，就會在正確位置開出視窗。）</p>
+</div><div class="step"><div class="no">STEP 8</div><h3>對照參考範例</h3>
+<p>跟下方的參考範例比對：文字不必一樣，但<b>六區塊的範圍要一致</b>。</p>
+<div class="prompt"><pre><code># 專案名稱：會議室預約看板
+## 目標（一句話）
+讓同仁在瀏覽器上預約會議室，避免時段衝突
+## 使用者是誰
+公司內部同仁，不需要帳號登入
+## 功能清單（MVP）
+- 選擇會議室（3 間）、日期、起始與結束時段（整點制）
+- 填寫預約人姓名後送出
+- 顯示當日所有預約
+- 時段衝突時拒絕預約並提示
+- 資料存 localStorage，重新整理不消失
+## 非目標（明確不做）
+- 不做登入與權限
+- 不做後端與資料庫
+- 不做多人即時同步
+- 不做 Email / 通知
+## 技術限制
+- 單一 HTML 檔案（HTML + CSS + JS 都在同一檔）
+- 不使用外部框架與函式庫
+- 介面與註解使用繁體中文
+## 驗收標準
+- 能成功建立一筆預約並顯示在列表
+- 相同會議室、重疊時段的預約會被擋下並提示
+- 重新整理頁面後，預約資料仍在</code></pre></div>
+</div><div class="step"><div class="no">STEP 9</div><h3>拿出腦補清單核對</h3>
+<p>Lab 1 清單上的每一項，在 spec.md 裡找它的歸屬——應該落在功能清單、非目標或技術限制其中之一。</p>
+<blockquote><p><b>📦 這一關的產物（後面會一直用到）</b><br/><code>spec.md</code>——Lab 4 要 commit 它、Lab 5 審計畫靠它、Lab 7 點交也靠它。</p></blockquote></div><section class="checks"><div class="head"><h2>過關條件</h2><div class="meter"><i></i><span>0/0</span></div></div><div class="grid"><label class="tile"><input type="checkbox"/><span class="tick">✓</span><span class="t">先猜的 2～3 行有寫在紙上，且至少圈出 1 句你漏掉的（3 句全中的，恭喜，你已經會交辦了）</span></label><label class="tile"><input type="checkbox"/><span class="tick">✓</span><span class="t"><code>spec.md</code> 存在於專案資料夾（<code>type spec.md</code> 看得到內容）</span></label><label class="tile"><input type="checkbox"/><span class="tick">✓</span><span class="t">六區塊一塊不缺</span></label><label class="tile"><input type="checkbox"/><span class="tick">✓</span><span class="t">「非目標」至少 3 條</span></label><label class="tile"><input type="checkbox"/><span class="tick">✓</span><span class="t">拿出腦補清單逐項核對：每一項都能在 spec 裡找到歸屬（功能清單、非目標或技術限制其中之一）</span></label></div><div class="stamp" role="status">過關！可以前往Lab 4</div></section><div class="clue"><span class="lock">下一關</span><div class="txt"><p>spec 有了，但它只是資料夾裡孤零零的一個檔案：沒有版控——等一下 Claude 動工改壞了，你無法回到「還是好的」那個時間點；也沒有一份<b>每次開工都自動生效</b>的施工規矩。下一關把這些都立起來。</p></div></div>
+<nav class="nav"><a href="Lab6_2.html"><small>← 上一關</small>Lab 2｜幫爛 spec 找碴</a><a class="nx" href="Lab6_4.html"><small>下一關 →</small>Lab 4｜標準開工儀式</a></nav>
+</main><script>
+document.querySelectorAll('.prompt').forEach(function(box){
+  var b=document.createElement('button');b.type='button';b.className='copy';b.textContent='複製';
+  b.addEventListener('click',function(){var t=box.querySelector('pre').innerText;
+    try{navigator.clipboard.writeText(t).then(function(){b.textContent='已複製';setTimeout(function(){b.textContent='複製'},1400)},function(){})}catch(e){}});
+  box.appendChild(b);});
+document.querySelectorAll('.checks').forEach(function(sec){
+  var boxes=sec.querySelectorAll('.tile input'),meter=sec.querySelector('.meter'),stamp=sec.querySelector('.stamp');
+  var scope=sec.closest('.section')||document;var nx=scope.querySelector('.nav .nx');
+  var single=scope.querySelectorAll('.checks').length<=1;
+  function upd(){var n=[].filter.call(boxes,function(y){return y.checked}).length,all=n===boxes.length&&n>0;
+    meter.style.setProperty('--p',(boxes.length?n/boxes.length*100:0)+'%');meter.querySelector('span').textContent=n+'/'+boxes.length;
+    stamp.classList.toggle('show',all);if(nx&&single)nx.classList.toggle('ready',all);}
+  boxes.forEach(function(x){x.addEventListener('change',upd)});upd();});
+</script>
+</body></html>
