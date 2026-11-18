@@ -109,6 +109,7 @@ select:focus,input:focus{border-color:var(--rc)}
   <h1>會議室預約看板</h1>
   <button id="addBtn" class="primary">新增預約</button>
   <button id="exportBtn">匯出 JSON</button>
+  <button id="exportCsvBtn">匯出 CSV</button>
   <button id="importBtn">匯入 JSON</button>
   <button id="settingsBtn">設定</button>
   <input type="file" id="importFile" accept=".json,application/json" hidden>
@@ -556,6 +557,34 @@ $('exportBtn').addEventListener('click', function(){
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   toast('已匯出備份');
+});
+
+// CSV 欄位跳脫：含逗號、引號、換行時加引號；開頭為公式符號時前置單引號，避免試算表當成公式執行
+function csvCell(v){
+  var s = String(v == null ? '' : v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+// 匯出人類可讀的 CSV（所有會議室，依日期、時間排序；加 BOM 讓 Excel 正確顯示繁體中文）
+$('exportCsvBtn').addEventListener('click', function(){
+  var names = {};
+  data.rooms.forEach(function(r){ names[r.id] = r.name; });
+  var rows = data.bookings.slice().sort(function(a, b){
+    return (a.date + a.start).localeCompare(b.date + b.start) || (names[a.roomId] || '').localeCompare(names[b.roomId] || '');
+  }).map(function(b){
+    var d = parseDate(b.date);
+    return [b.date, d ? '週' + WEEKDAY[d.getDay()] : '', b.start, b.end, names[b.roomId] || b.roomId, b.topic, b.booker || ''];
+  });
+  rows.unshift(['日期', '星期', '開始', '結束', '會議室', '主題', '預約人']);
+  var csv = '﻿' + rows.map(function(r){ return r.map(csvCell).join(','); }).join('\r\n') + '\r\n';
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'meeting-room-bookings-' + fmtDate(new Date()) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast('已匯出 CSV（共 ' + (rows.length - 1) + ' 筆）');
 });
 
 $('importBtn').addEventListener('click', function(){ $('importFile').click(); });
