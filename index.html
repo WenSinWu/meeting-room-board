@@ -67,7 +67,10 @@ main{padding:14px 20px 28px}
   background:color-mix(in srgb,var(--rc) 16%,var(--sheet));color:var(--ink);
   border-left:5px solid var(--rc);border-radius:2px 6px 6px 2px;font-size:13px;line-height:1.35}
 .block:hover{background:color-mix(in srgb,var(--rc) 28%,var(--sheet))}
-.block b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.block .cancel{position:absolute;top:2px;right:3px;padding:0 6px;font:12px/18px var(--f-num);color:var(--ink-2);
+  background:var(--sheet);border:1px solid var(--rc);border-radius:4px;cursor:pointer}
+.block .cancel:hover{background:var(--rc);color:#fff}
+.block b{display:block;padding-right:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .block span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-2);font:12px/1.35 var(--f-num)}
 .empty{margin:12px 2px 0;color:var(--muted);font-size:14px;min-height:1.5em}
 
@@ -399,6 +402,10 @@ function render(){
       blk.appendChild(el('b', null, b.topic));
       blk.appendChild(el('span', null, b.start + '–' + b.end + (b.booker ? '　' + b.booker : '')));
       blk.title = b.topic + '（' + b.start + '–' + b.end + (b.booker ? '，' + b.booker : '') + '）';
+      var cb = el('button', 'cancel', '取消');
+      cb.type = 'button';
+      cb.title = '取消這筆預約';
+      blk.appendChild(cb);
       col.appendChild(blk);
       count++;
     });
@@ -411,10 +418,26 @@ function render(){
 // 點擊看板：空格新增、色塊編輯
 $('board').addEventListener('click', function(e){
   var blk = e.target.closest('.block');
+  // 取消按鈕：確認後刪除並同步 localStorage，不進入編輯對話框
+  if (blk && e.target.closest('.cancel')) {
+    cancelBooking(blk.dataset.id);
+    return;
+  }
   if (blk) { openBook(data.bookings.filter(function(b){ return b.id === blk.dataset.id; })[0]); return; }
   var cell = e.target.closest('.slot');
   if (cell) openBook(null, cell.dataset.date, +cell.dataset.min);
 });
+
+function cancelBooking(id){
+  var b = data.bookings.filter(function(x){ return x.id === id; })[0];
+  if (!b) return;
+  if (!confirm('確定要取消「' + b.topic + '」（' + b.date + ' ' + b.start + '–' + b.end + '）嗎？此動作無法復原。')) return;
+  var backup = JSON.stringify(data);
+  data.bookings = data.bookings.filter(function(x){ return x.id !== id; });
+  if (!save()) { data = JSON.parse(backup); return; }
+  render();
+  toast('已取消預約');
+}
 
 /* ===== 預約對話框 ===== */
 var editingId = null;
