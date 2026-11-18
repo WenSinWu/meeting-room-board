@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 開發規範
 
-- 本專案為單一 HTML 檔案，檔名固定為 `index.html`，禁止拆分多檔、禁止引入外部框架。
+- 本專案為 `index.html` + `app.js` + `test.html` 三檔，禁止再拆分其他檔案、禁止外部框架。`app.js` 以一般 script 載入（不用 ES module），放衝突判斷等純函式。
 - 所有介面文字與程式註解使用繁體中文。
 - 每次修改後，用一句話說明改了什麼。
 - `spec.md` 的非目標清單（第 4 節）是範圍界線：月檢視、多會議室總覽、通知、CSV、行事曆串接等都不做。

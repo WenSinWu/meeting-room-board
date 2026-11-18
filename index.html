@@ -176,6 +176,7 @@ select:focus,input:focus{border-color:var(--rc)}
 
 <div class="toast" id="toast"></div>
 
+<script src="app.js"></script>
 <script>
 (function(){
 'use strict';
@@ -218,13 +219,7 @@ function save(){
 }
 
 /* ===== 時間工具 ===== */
-function toMin(s){
-  var m = /^(\d{2}):(\d{2})$/.exec(s);
-  if (!m) return NaN;
-  var h = +m[1], mi = +m[2];
-  if (h > 24 || mi > 59 || (h === 24 && mi > 0)) return NaN;
-  return h * 60 + mi;
-}
+// toMin 已移至 app.js
 function pad(n){ return (n < 10 ? '0' : '') + n; }
 function fromMin(n){ return pad(Math.floor(n / 60)) + ':' + pad(n % 60); }
 
@@ -242,11 +237,7 @@ var WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
 
 /* ===== 規則層（純函式） ===== */
 
-// 兩筆預約是否衝突：同會議室、同日、時間區間有交集（首尾相接不算衝突）
-function overlaps(a, b){
-  return a.roomId === b.roomId && a.date === b.date &&
-    toMin(a.start) < toMin(b.end) && toMin(b.start) < toMin(a.end);
-}
+// overlaps、findConflict（衝突判斷）已移至 app.js
 
 // 驗證一筆預約；通過回傳 null，否則回傳錯誤訊息。excludeId 用於編輯時排除自己
 function validateBooking(d, excludeId, ctx){
@@ -261,12 +252,8 @@ function validateBooking(d, excludeId, ctx){
   if (en <= st) return '結束時間必須晚於開始時間。';
   if (st < ds || en > de) return '預約必須在工作時段 ' + s.dayStart + '–' + s.dayEnd + ' 之內。';
   if ((st - ds) % s.slotMin !== 0 || (en - ds) % s.slotMin !== 0) return '時間必須對齊 ' + s.slotMin + ' 分鐘的時段。';
-  for (var i = 0; i < ctx.bookings.length; i++) {
-    var b = ctx.bookings[i];
-    if (b.id !== excludeId && overlaps(d, b)) {
-      return '與既有預約衝突：「' + b.topic + '」' + b.start + '–' + b.end + '。';
-    }
-  }
+  var b = findConflict(d, ctx.bookings, excludeId);
+  if (b) return '與既有預約衝突：「' + b.topic + '」' + b.start + '–' + b.end + '。';
   return null;
 }
 
